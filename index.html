@@ -352,11 +352,11 @@ function telaLogin(){
   const el=$("#login"),cfg=sbCfg();el.hidden=false;
   el.innerHTML='<form class="logincard" id="flog"><img class="logo" alt="CARMONA" src="'+$(".rail .logo").src+'"><h3>Entrar na gestão de aulas</h3>'+campo("lemail","E-mail",'<input id="lemail" name="email" type="email" autocomplete="username" required>')+campo("lsenha","Senha",'<input id="lsenha" name="senha" type="password" autocomplete="current-password" required minlength="6">')+'<div class="err" id="errl" hidden></div><div class="hint" id="okl" hidden></div><button class="btn primary">Entrar</button><div class="loginlinks"><button type="button" class="lnk" id="bcriar">Criar minha conta</button><button type="button" class="lnk" id="besq">Esqueci a senha</button></div>'+(cfg&&cfg.fixo?"":'<button type="button" class="lnk" data-act="desconectar">Usar outro projeto Supabase</button>')+"</form>";
   const f=$("#flog"),msg=(t,ok)=>{$("#errl").hidden=!!ok;$("#okl").hidden=!ok;$(ok?"#okl":"#errl").textContent=t};
-  f.onsubmit=async e=>{e.preventDefault();const {data,error}=await SB.auth.signInWithPassword({email:f.email.value.trim(),password:f.senha.value});if(error)return msg(erroAuth(error));entrar(data.user)};
-  $("#bcriar").onclick=async()=>{if(!f.reportValidity())return;const {data,error}=await SB.auth.signUp({email:f.email.value.trim(),password:f.senha.value});if(error)return msg(erroAuth(error));if(data.session)entrar(data.user);else msg("Conta criada. Abra o e-mail de confirmação que o Supabase enviou e depois volte aqui para entrar.",true)};
+  
+  if(error)return msg(erroAuth(error));if(data.session)entrar(data.user);else msg("Conta criada. Abra o e-mail de confirmação que o Supabase enviou e depois volte aqui para entrar.",true)};
   $("#besq").onclick=async()=>{const em=f.email.value.trim();if(!em)return msg("Digite seu e-mail acima primeiro.");const {error}=await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});if(error)return msg(erroAuth(error));msg("Enviei um link para redefinir a senha no seu e-mail.",true)}}
 function novaSenha(){abrir("Definir nova senha",'<form id="fns">'+campo("nsenha","Nova senha",'<input id="nsenha" name="senha" type="password" autocomplete="new-password" required minlength="6">')+'<div class="err" id="errn" hidden></div><div class="foot"><button class="btn primary">Salvar senha</button></div></form>');const f=$("#fns");f.onsubmit=async e=>{e.preventDefault();const {error}=await SB.auth.updateUser({password:f.senha.value});if(error){const er=$("#errn");er.hidden=false;er.textContent=erroAuth(error);return}fechar();toast("Senha atualizada")}}
-function entrar(user){
+
   USER=user;$("#login").hidden=true;$("#login").innerHTML="";
   if(S.dono&&S.dono!==USER.id)S=exemplo();
   render();setSync("busy","Conectando");nuvemCarregar()}
