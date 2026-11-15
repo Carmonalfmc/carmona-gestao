@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CARMONA Scout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E0E10;--surface:#18181B;--ink:#F1EFE9;--muted:#A39F95;--line:#2B2B30;
+  --rail:#050506;--rail-ink:#F3F1EA;--rail-muted:#9B978C;
+  --gold:#C9A45C;--gold-ink:#DDBE78;--gold-soft:#2A2416;
+  --ok:#7FD4A6;--ok-bg:#13291E;--warn:#F0BC6A;--warn-bg:#2E2210;
+  --bad:#F29B94;--bad-bg:#331614;--info-bg:#232327;
+  --display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:12px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--display);font-stretch:112%;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:24px;font-weight:800}
+h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold-ink)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* Login */
+.login{position:fixed;inset:0;background:var(--rail);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;overflow:auto}
+.login[hidden]{display:none}
+.logincard{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;color:var(--rail-ink)}
+.logincard .logo-mark{font-family:var(--display);font-stretch:125%;font-weight:800;font-size:22px;letter-spacing:.3em;color:var(--rail-ink);margin-bottom:4px}
+.logincard .sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.logincard h3{font-size:18px;font-weight:700;margin-top:8px}
+.logincard label{font-size:13px;color:var(--rail-muted);display:block;margin-bottom:4px}
+.logincard input{width:100%;padding:11px 13px;border-radius:8px;border:1px solid #2B2B30;background:#17171A;color:#F3F1EA;font-size:15px}
+.logincard input:focus{outline:2px solid var(--gold);outline-offset:1px}
+.lnk{border:0;background:transparent;color:var(--gold);cursor:pointer;padding:6px 0;font-weight:600;font-size:13px;text-align:left}
+.login .err{color:var(--bad);font-size:13px;min-height:18px}
+
+/* Topbar */
+.topbar{background:var(--rail);padding:14px 20px 10px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.topbar .wordmark{font-family:var(--display);font-stretch:125%;font-weight:800;font-size:16px;letter-spacing:.3em}
+.topbar .user-name{font-size:12px;color:var(--muted)}
+
+/* Tabbar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--rail);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));z-index:20}
+.tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;color:var(--rail-muted);text-decoration:none;font-size:10.5px;font-weight:600;border-radius:8px;min-height:44px}
+.tabbar a svg{width:20px;height:20px}
+.tabbar a[aria-current="page"]{color:var(--gold)}
+
+/* Main */
+.main{padding:20px 16px calc(80px + env(safe-area-inset-bottom,0px));max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.card-head{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card-body{padding:0 16px 16px}
+
+/* Botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600;font-size:14px;text-decoration:none;color:var(--ink);white-space:nowrap;width:100%}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:#0E0E10}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted);font-weight:500}
+.btn.sm{min-height:32px;padding:4px 12px;font-size:13px;width:auto}
+
+/* Match card */
+.match-item{padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
+.match-item:last-child{border-bottom:none}
+.match-item:hover{background:var(--info-bg)}
+.match-item .oponente{font-weight:700;font-size:16px}
+.match-item .meta{font-size:12px;color:var(--muted);margin-top:2px}
+.match-item .placar{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--gold-ink)}
+
+/* Stat table */
+.stat-table{width:100%;border-collapse:collapse}
+.stat-table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:6px 8px;text-align:right;font-weight:600}
+.stat-table th:first-child{text-align:left}
+.stat-table td{padding:9px 8px;border-top:1px solid var(--line);font-size:14px;text-align:right}
+.stat-table td:first-child{text-align:left;color:var(--muted)}
+.stat-table .num-cell{font-family:var(--mono);font-weight:600}
+.stat-table .pct{font-size:12px;color:var(--muted);display:block}
+.stat-section{padding:0 16px 4px;display:flex;flex-direction:column;gap:0}
+.stat-label{padding:14px 16px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--gold-ink);font-weight:700}
+
+/* Zona pills */
+.zona-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.zona-dot{width:10px;height:10px;border-radius:50%;flex:none}
+.zona-dot.verde{background:#5FCB93}
+.zona-dot.amarela{background:#F0BC6A}
+.zona-dot.vermelha{background:#EF7B72}
+.zona-dot.roxa{background:#A78BFA}
+.zona-name{flex:1;font-size:14px;color:var(--muted)}
+.zona-val{font-family:var(--mono);font-size:14px;font-weight:600;min-width:40px;text-align:right}
+.zona-val.win{color:var(--ok)}
+.zona-val.loss{color:var(--bad)}
+
+/* Evolução */
+.tema-grupo{margin-bottom:16px}
+.tema-grupo-nome{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--gold-ink);font-weight:700;margin-bottom:8px}
+.temas-grid{display:flex;flex-wrap:wrap;gap:8px}
+.tema-chip{padding:7px 13px;border-radius:20px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s}
+.tema-chip.ativo{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-ink)}
+
+/* Resumo de texto */
+.resumo-block{padding:14px 16px;font-size:14px;line-height:1.65;color:var(--ink)}
+.resumo-block p{margin:0 0 10px}
+.resumo-block p:last-child{margin:0}
+
+/* Back button */
+.back-btn{display:flex;align-items:center;gap:6px;color:var(--gold-ink);font-size:14px;font-weight:600;cursor:pointer;background:none;border:none;padding:0;margin-bottom:4px}
+.back-btn svg{width:18px;height:18px}
+
+/* Empty state */
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
+.empty svg{width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.4}
+
+/* Avaliação */
+.aval-item{padding:14px 16px;border-bottom:1px solid var(--line)}
+.aval-item:last-child{border-bottom:none}
+.aval-data{font-size:12px;color:var(--muted);margin-bottom:6px}
+.aval-texto{font-size:14px;line-height:1.6}
+
+/* Perfil */
+.perfil-info{padding:16px;display:flex;flex-direction:column;gap:6px}
+.perfil-nome{font-size:20px;font-weight:800;font-family:var(--display)}
+.perfil-email{font-size:13px;color:var(--muted)}
+.perfil-nivel{font-size:13px;color:var(--gold-ink);font-weight:600}
+
+/* Toast */
+.toast{position:fixed;bottom:calc(70px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login" id="login">
+  <div class="logincard">
+    <div>
+      <div class="logo-mark">CARMONA</div>
+      <div class="sub">Scout do Aluno</div>
+    </div>
+    <h3>Entrar</h3>
+    <form id="flog">
+      <div style="margin-bottom:12px">
+        <label for="lemail">E-mail</label>
+        <input type="email" id="lemail" name="email" autocomplete="email" required placeholder="seu@email.com">
+      </div>
+      <div style="margin-bottom:12px">
+        <label for="lsenha">Senha</label>
+        <input type="password" id="lsenha" name="senha" autocomplete="current-password" required placeholder="••••••••">
+      </div>
+      <div class="err" id="lerr"></div>
+      <button type="submit" class="btn primary" style="margin-top:8px">Entrar</button>
+    </form>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+      <button class="lnk" id="bcadastrar">Criar conta</button>
+      <button class="lnk" id="besquecer">Esqueci a senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" hidden>
+  <div class="topbar">
+    <div class="wordmark">CARMONA</div>
+    <div class="user-name" id="topbar-nome"></div>
+  </div>
+  <main class="main" id="main"></main>
+  <nav class="tabbar" id="tabbar">
+    <a href="#partidas" id="tab-partidas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3c2.4 2.4 3.9 5.6 4 9M12 3c-2.4 2.4-3.9 5.6-4 9M3 12h18"/></svg>
+      Partidas
+    </a>
+    <a href="#evolucao" id="tab-evolucao">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 20h20M6 20V14m4 6V10m4 10V6m4 14V3"/></svg>
+      Evolução
+    </a>
+    <a href="#perfil" id="tab-perfil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c.8-4 3.8-6 8-6s7.2 2 8 6"/></svg>
+      Perfil
+    </a>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL="https://zcveqvnrftaymkgrewyb.supabase.co";
+const SB_KEY="sb_publishable_VjgOzBn1wD8-OBtTFbBGng_4P0ya9zN";
+
+// --- Supabase mini client ---
+let _token=null,_uid=null,_userEmail=null;
+const headers=(extra={})=>Object.assign({"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+(_token||SB_KEY)},extra);
+async function sbFetch(path,opts={}){
+  const r=await fetch(SB_URL+path,Object.assign({headers:headers()},opts));
+  if(!r.ok){let e;try{e=await r.json()}catch(x){e={message:r.statusText}}throw new Error(e.message||e.error_description||r.statusText)}
+  if(r.status===204)return null;
+  return r.json()}
+async function sbGet(table,params=""){return sbFetch("/rest/v1/"+table+"?"+params)}
+async function sbPost(table,body){return sbFetch("/rest/v1/"+table,{method:"POST",headers:headers({"Prefer":"return=minimal"}),body:JSON.stringify(body)})}
+async function sbUpsert(table,body){return sbFetch("/rest/v1/"+table,{method:"POST",headers:headers({"Prefer":"resolution=merge-duplicates,return=minimal"}),body:JSON.stringify(body)})}
+
+async function sbLogin(email,senha){
+  const r=await fetch(SB_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY},body:JSON.stringify({email,password:senha})});
+  const d=await r.json();if(d.error||!d.access_token)throw new Error(d.error_description||d.msg||"Erro ao entrar");
+  return d}
+async function sbSignup(email,senha){
+  const r=await fetch(SB_URL+"/auth/v1/signup",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY},body:JSON.stringify({email,password:senha})});
+  const d=await r.json();if(d.error)throw new Error(d.error_description||d.msg||"Erro ao criar conta");
+  return d}
+async function sbResetPassword(email){
+  const r=await fetch(SB_URL+"/auth/v1/recover",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY},body:JSON.stringify({email})});
+  if(!r.ok)throw new Error("Erro ao enviar e-mail");}
+async function sbLogout(){
+  try{await fetch(SB_URL+"/auth/v1/logout",{method:"POST",headers:headers()})}catch(e){}
+  _token=null;_uid=null;_userEmail=null;localStorage.removeItem("scout_sess")}
+
+function carregarSessao(){
+  try{const s=JSON.parse(localStorage.getItem("scout_sess")||"null");if(s&&s.access_token&&s.expires_at>Date.now()/1000+60){_token=s.access_token;_uid=s.user&&s.user.id;_userEmail=s.user&&s.user.email;return true}}catch(e){}
+  return false}
+function salvarSessao(sess){_token=sess.access_token;_uid=sess.user&&sess.user.id;_userEmail=sess.user&&sess.user.email;try{localStorage.setItem("scout_sess",JSON.stringify(sess))}catch(e){}}
+
+// --- Estado ---
+let PERFIL=null,TEMAS={},PARTIDAS=[],PONTOS_CACHE={},AVALIACOES=[];
+let UI={rota:"partidas",partidaSel:null};
+
+// --- Utils ---
+const $=s=>document.querySelector(s);
+function esc(s){const d=document.createElement("div");d.textContent=s||"";return d.innerHTML}
+function fmt(d){if(!d)return "";const[y,m,dia]=d.split("-");return dia+"/"+m+"/"+y}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800)}
+function setErr(id,msg){const el=document.getElementById(id);if(el)el.textContent=msg||""}
+function ico(svg){return'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'+svg+"</svg>"}
+
+// --- Dados ---
+async function carregarPerfil(){
+  try{
+    const rows=await sbGet("scout_perfis","user_id=eq."+_uid+"&limit=1");
+    PERFIL=rows&&rows[0]||null;
+  }catch(e){PERFIL=null}}
+
+async function carregarPartidas(){
+  if(!PERFIL||!PERFIL.aluno_id)return;
+  try{
+    PARTIDAS=await sbGet("scout_partidas","aluno_id=eq."+encodeURIComponent(PERFIL.aluno_id)+"&order=data.desc");
+  }catch(e){PARTIDAS=[]}}
+
+async function carregarPontos(partidaId){
+  if(PONTOS_CACHE[partidaId])return PONTOS_CACHE[partidaId];
+  try{
+    const pts=await sbGet("scout_pontos","partida_id=eq."+encodeURIComponent(partidaId)+"&order=set_num.asc,game_num.asc,ponto_num.asc");
+    PONTOS_CACHE[partidaId]=pts||[];
+    return PONTOS_CACHE[partidaId];
+  }catch(e){return []}}
+
+async function carregarAvaliacoes(){
+  if(!PERFIL||!PERFIL.aluno_id)return;
+  try{
+    AVALIACOES=await sbGet("scout_avaliacoes","aluno_id=eq."+encodeURIComponent(PERFIL.aluno_id)+"&order=data.desc");
+  }catch(e){AVALIACOES=[]}}
+
+async function carregarTemas(){
+  try{
+    const rows=await sbGet("scout_evolucao","user_id=eq."+_uid+"&limit=1");
+    TEMAS=(rows&&rows[0]&&rows[0].temas)||{};
+  }catch(e){TEMAS={}}}
+
+async function salvarTemas(){
+  try{
+    await sbUpsert("scout_evolucao",{user_id:_uid,temas:TEMAS});
+    toast("Temas salvos")}
+  catch(e){toast("Erro ao salvar: "+e.message)}}
+
+// --- Telas ---
+const TEMAS_OPCOES=[
+  {grupo:"Minha direita (forehand)",temas:["Bola alta","Bola de ataque","Bola baixa","Bola de defesa","Cortada (slice)","Com efeito (topspin)"]},
+  {grupo:"Minha esquerda (backhand)",temas:["Bola alta","Bola de ataque","Bola baixa","Bola de defesa","Cortada (slice)","Com efeito (topspin)"]},
+  {grupo:"Meu saque",temas:["Ele sai do fundo da quadra","Primeiro saque não entra o suficiente","Ele fica na rede","Segundo saque sem segurança"]},
+  {grupo:"Situações do jogo",temas:["Quando preciso construir o ponto","Quando estou defendendo","Quando erro muito rápido","Quando estou na rede","Pontos longos"]},
+];
+
+function telaPartidas(){
+  if(!PERFIL||!PERFIL.aluno_id){
+    return'<div class="empty">'+ico('<circle cx="12" cy="8" r="4"/><path d="M4 20c.8-4 3.8-6 8-6s7.2 2 8 6"/>')+'<div>Aguardando o professor vincular sua conta.<br>Volte em breve.</div></div>'}
+  if(!PARTIDAS.length){
+    return'<div class="empty">'+ico('<circle cx="12" cy="12" r="9"/><path d="M12 3c2.4 2.4 3.9 5.6 4 9"/>')+'<div>Nenhuma partida ainda.<br>O professor vai registrar aqui.</div></div>'}
+  return PARTIDAS.map(p=>{
+    const scores=p.placar?p.placar.split(/[-x·]/).map(s=>+s.trim()):[0,0];
+    const alunoVenceu=scores[0]>scores[1];
+    return'<div class="match-item" data-act="partida" data-id="'+esc(p.id)+'">'+
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'+
+      '<div><div class="oponente">'+esc(p.oponente||"Adversário")+'</div><div class="meta">'+esc(fmt(p.data))+(p.formato?' · '+esc(p.formato):"")+'</div></div>'+
+      '<div class="placar" style="color:'+(alunoVenceu?'var(--ok)':'var(--bad)')+'">'+esc(p.placar)+'</div>'+
+      '</div></div>'
+  }).join("")}
+
+function telaDetalhePartida(p,pts){
+  // Calcula estatísticas
+  const al=(k)=>pts.filter(pt=>pt[k]);
+  // Pontos gerais
+  const totAl=pts.filter(pt=>pt.vencedor==="aluno").length;
+  const totOp=pts.filter(pt=>pt.vencedor==="oponente").length;
+  const tot=pts.length||1;
+
+  // Saque (aluno saca)
+  const sacosAl=pts.filter(pt=>pt.sacador==="aluno");
+  const s1in=sacosAl.filter(pt=>pt.saque1==="dentro"||pt.saque1==="ace").length;
+  const s1tot=sacosAl.filter(pt=>pt.saque1).length||0;
+  const s1pts=sacosAl.filter(pt=>(pt.saque1==="dentro"||pt.saque1==="ace")&&pt.vencedor==="aluno").length;
+  const s2tot=sacosAl.filter(pt=>pt.saque2).length||0;
+  const s2in=sacosAl.filter(pt=>pt.saque2==="dentro"||pt.saque2==="ace").length;
+  const s2pts=sacosAl.filter(pt=>pt.saque2&&pt.vencedor==="aluno").length;
+  const aces=sacosAl.filter(pt=>pt.saque1==="ace").length;
+  const df=sacosAl.filter(pt=>pt.saque2==="dupla_falta").length;
+  const sacForc=sacosAl.filter(pt=>pt.saque_forçou).length;
+
+  // Devolução (oponente saca)
+  const sacosOp=pts.filter(pt=>pt.sacador==="oponente");
+  const devPts=sacosOp.filter(pt=>pt.vencedor==="aluno").length;
+  const devTot=sacosOp.length||1;
+
+  // Depois do saque
+  const winners=pts.filter(pt=>pt.tipo_fim==="winner"&&pt.vencedor==="aluno").length;
+  const errosNf=pts.filter(pt=>pt.tipo_fim==="erro_nf"&&pt.vencedor==="oponente").length;
+  const errosF=pts.filter(pt=>pt.tipo_fim==="erro_f"&&pt.vencedor==="oponente").length+pts.filter(pt=>pt.tipo_fim==="erro_f"&&pt.vencedor==="aluno").length;
+  const errosProv=pts.filter(pt=>pt.tipo_fim==="erro_f"&&pt.vencedor==="aluno").length;
+  const saldo=winners+errosProv-errosNf;
+
+  // Pontos por tamanho de rally
+  const curtos=pts.filter(pt=>pt.vencedor==="aluno"&&(pt.num_bolas||1)<=4).length;
+  const curtosTot=pts.filter(pt=>(pt.num_bolas||1)<=4).length;
+  const medios=pts.filter(pt=>pt.vencedor==="aluno"&&(pt.num_bolas||1)>=5&&(pt.num_bolas||1)<=8).length;
+  const mediosTot=pts.filter(pt=>(pt.num_bolas||1)>=5&&(pt.num_bolas||1)<=8).length;
+  const longos=pts.filter(pt=>pt.vencedor==="aluno"&&(pt.num_bolas||1)>=9).length;
+  const longosTot=pts.filter(pt=>(pt.num_bolas||1)>=9).length;
+
+  // Erros por golpe
+  const golpes=["forehand","backhand"];
+  const destinos=["rede","fundo","lateral"];
+  const erroGolpeDest=(g,d)=>pts.filter(pt=>pt.tipo_fim&&(pt.tipo_fim==="erro_nf"||pt.tipo_fim==="erro_f")&&pt.vencedor==="oponente"&&pt.golpe_fim===g&&pt.destino_fim===d).length;
+  const totalErroGolpe=(g)=>pts.filter(pt=>pt.tipo_fim&&(pt.tipo_fim==="erro_nf"||pt.tipo_fim==="erro_f")&&pt.vencedor==="oponente"&&pt.golpe_fim===g).length;
+  const semLadoErros=destinos.map(d=>erroGolpeDest("sem_lado",d));
+
+  // Zonas
+  const zonas=["verde","amarela","vermelha","roxa"];
+  const zonaGanhou=(z)=>pts.filter(pt=>pt.vencedor==="aluno"&&pt.zona_fim===z).length;
+  const zonaPerdeu=(z)=>pts.filter(pt=>pt.vencedor==="oponente"&&pt.zona_fim===z).length;
+
+  const pct=(n,d)=>d?Math.round(n/d*100)+"%":"—";
+  const val=(n)=>n===0?"0":String(n);
+  const sld=(n)=>n>0?"+"+n:String(n);
+
+  // Resumo textual
+  let resumo="";
+  if(s1tot>0){
+    resumo+="<p>No saque, "+["você colocou","colocou"][0]+" "+s1in+" de "+s1tot+" primeiros saques em quadra ("+pct(s1in,s1tot)+")";
+    if(s1in>0)resumo+=" e venceu "+s1pts+" desses pontos ("+pct(s1pts,s1in)+")";
+    resumo+=". ";
+    if(s2tot>0)resumo+="Precisou do segundo saque "+s2tot+" vez"+(s2tot>1?"es":"")+", acertou "+s2in+" e ganhou "+s2pts+" desses pontos ("+pct(s2pts,s2in||1)+"). ";
+    if(sacForc>0)resumo+="Somou "+sacForc+" saque"+(sacForc>1?"s que forçaram erro na devolução":"que forçou erro na devolução")+". ";
+    if(df>0)resumo+="Cometeu "+df+" dupla"+(df>1?" faltas":" falta")+".";
+    resumo+="</p>";}
+  if(devTot>1)resumo+="<p>Na devolução, você venceu "+devPts+" de "+devTot+" pontos jogados contra o saque adversário ("+pct(devPts,devTot)+").</p>";
+  resumo+="<p>Depois do saque, você fez "+winners+" winner"+(winners!==1?"s":"")+" e provocou "+errosProv+" erro"+(errosProv!==1?"s forçados":"forçado")+" no adversário. Cometeu "+errosNf+" erro"+(errosNf!==1?"s não forçados":"não forçado")+" e sofreu "+errosF+" erro"+(errosF!==1?"s forçados":"forçado")+". O saldo ficou em <strong>"+sld(saldo)+"</strong>.</p>";
+
+  return'<button class="back-btn" data-act="voltar">'+ico('<polyline points="15 18 9 12 15 6"/>')+'Partidas</button>'+
+    '<div style="margin-bottom:4px"><div class="small muted">'+esc(fmt(p.data))+(p.formato?' · '+esc(p.formato):"")+'</div></div>'+
+    '<h1>Você × '+esc(p.oponente)+'</h1>'+
+    '<div style="font-family:var(--mono);font-size:28px;font-weight:700;margin-top:4px;color:var(--gold-ink)">'+esc(p.placar)+'</div>'+
+    '<div class="card"><div style="padding:14px 16px 6px"><h2>Resumo</h2></div><div class="resumo-block">'+resumo+'</div></div>'+
+
+    // Tabela geral
+    '<div class="card"><div style="padding:14px 16px 0"><h2>Visão geral</h2></div>'+
+    '<table class="stat-table" style="padding:0 16px 12px;display:block"><thead><tr><th></th><th>Você</th></tr></thead><tbody>'+
+    '<tr><td>Pontos ganhos</td><td class="num-cell">'+totAl+' <span class="pct">'+pct(totAl,tot)+'</span></td></tr>'+
+    '<tr><td style="color:var(--gold-ink);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700">Saque</td><td></td></tr>'+
+    '<tr><td>1º saque em quadra</td><td class="num-cell">'+s1in+'/'+s1tot+' <span class="pct">'+pct(s1in,s1tot)+'</span></td></tr>'+
+    '<tr><td>Pontos com 1º saque</td><td class="num-cell">'+s1pts+'/'+s1in+' <span class="pct">'+pct(s1pts,s1in||1)+'</span></td></tr>'+
+    '<tr><td>2º saque em quadra</td><td class="num-cell">'+s2in+'/'+s2tot+' <span class="pct">'+pct(s2in,s2tot||1)+'</span></td></tr>'+
+    '<tr><td>Pontos com 2º saque</td><td class="num-cell">'+s2pts+'/'+s2in+' <span class="pct">'+pct(s2pts,s2in||1)+'</span></td></tr>'+
+    '<tr><td>Aces</td><td class="num-cell">'+aces+'</td></tr>'+
+    '<tr><td>Duplas faltas</td><td class="num-cell">'+df+'</td></tr>'+
+    '<tr><td>Saques que forçaram erro</td><td class="num-cell">'+sacForc+'</td></tr>'+
+    '<tr><td style="color:var(--gold-ink);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700">Devolução</td><td></td></tr>'+
+    '<tr><td>Pontos ganhos</td><td class="num-cell">'+devPts+'/'+devTot+' <span class="pct">'+pct(devPts,devTot)+'</span></td></tr>'+
+    '<tr><td style="color:var(--gold-ink);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700">Depois do saque</td><td></td></tr>'+
+    '<tr><td>Winners</td><td class="num-cell">'+winners+'</td></tr>'+
+    '<tr><td>Erros provocados</td><td class="num-cell">'+errosProv+'</td></tr>'+
+    '<tr><td>Erros não forçados</td><td class="num-cell">'+errosNf+'</td></tr>'+
+    '<tr><td>Saldo</td><td class="num-cell" style="color:'+(saldo>=0?'var(--ok)':'var(--bad)')+'">'+sld(saldo)+'</td></tr>'+
+    '<tr><td style="color:var(--gold-ink);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700">Pontos ganhos por tamanho</td><td></td></tr>'+
+    '<tr><td>Até 4 bolas</td><td class="num-cell">'+curtos+'/'+curtosTot+'</td></tr>'+
+    '<tr><td>5 a 8 bolas</td><td class="num-cell">'+medios+'/'+mediosTot+'</td></tr>'+
+    '<tr><td>9 bolas ou mais</td><td class="num-cell">'+longos+'/'+longosTot+'</td></tr>'+
+    '</tbody></table></div>'+
+
+    // Erros por golpe
+    '<div class="card"><div style="padding:14px 16px 6px"><h2>Erros por golpe e destino</h2></div>'+
+    '<table class="stat-table" style="padding:0 16px 12px;display:block"><thead><tr><th></th><th>Rede</th><th>Fundo</th><th>Lateral</th><th>Total</th></tr></thead><tbody>'+
+    ['forehand','backhand'].map(g=>{
+      const cells=destinos.map(d=>'<td class="num-cell">'+erroGolpeDest(g,d)+'</td>').join("");
+      return'<tr><td>'+(g==="forehand"?"Forehand":"Backhand")+'</td>'+cells+'<td class="num-cell">'+totalErroGolpe(g)+'</td></tr>'
+    }).join("")+
+    '<tr><td>Sem lado</td>'+semLadoErros.map(v=>'<td class="num-cell">'+v+'</td>').join("")+'<td class="num-cell">'+semLadoErros.reduce((a,b)=>a+b,0)+'</td></tr>'+
+    '</tbody></table><div style="padding:0 16px 12px;font-size:12px;color:var(--muted)">Soma erros forçados e não forçados.</div></div>'+
+
+    // Zonas
+    '<div class="card"><div style="padding:14px 16px 6px"><h2>Última bola por zona</h2></div>'+
+    '<div style="padding:0 16px 14px">'+
+    '<div style="display:grid;grid-template-columns:1fr auto auto;gap:0 20px;padding-bottom:4px">'+
+    '<div></div><div class="small muted" style="text-align:right">Ganhou</div><div class="small muted" style="text-align:right">Perdeu</div></div>'+
+    zonas.filter(z=>zonaGanhou(z)+zonaPerdeu(z)>0).map(z=>
+      '<div class="zona-row">'+
+      '<div class="zona-dot '+z+'"></div>'+
+      '<div class="zona-name">'+z.charAt(0).toUpperCase()+z.slice(1)+'</div>'+
+      '<div class="zona-val win">'+zonaGanhou(z)+'</div>'+
+      '<div class="zona-val loss">'+zonaPerdeu(z)+'</div>'+
+      '</div>').join("")+
+    '</div></div>'+
+    (p.obs?'<div class="card"><div style="padding:14px 16px 6px"><h2>Observações do professor</h2></div><div class="resumo-block">'+esc(p.obs)+'</div></div>':"")}
+
+function telaEvolucao(){
+  return'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><h1>Quer evoluir em</h1></div>'+
+    '<div class="card"><div class="card-body" style="padding-top:16px">'+
+    TEMAS_OPCOES.map(g=>{
+      const key=g.grupo;
+      const sel=(TEMAS[key]||[]);
+      return'<div class="tema-grupo">'+
+        '<div class="tema-grupo-nome">'+esc(g.grupo)+'</div>'+
+        '<div class="temas-grid">'+
+        g.temas.map(t=>{
+          const ativo=sel.includes(t);
+          return'<div class="tema-chip'+(ativo?" ativo":"'')+'" data-grupo="'+esc(key)+'" data-tema="'+esc(t)+'" data-act="tema">'+esc(t)+'</div>'
+        }).join("")+
+        '</div></div>'
+    }).join("")+
+    '<button class="btn primary" data-act="salvar-temas" style="margin-top:8px">Salvar</button>'+
+    '</div></div>'+
+    (AVALIACOES.length?'<div style="margin-top:4px"><h2 style="margin-bottom:10px">Avaliações do professor</h2>'+
+    '<div class="card">'+AVALIACOES.map(a=>'<div class="aval-item"><div class="aval-data">'+esc(fmt(a.data))+'</div><div class="aval-texto">'+esc(a.texto)+'</div></div>').join("")+'</div></div>':"")
+}
+
+function telaPerfil(){
+  const nome=PERFIL&&PERFIL.nome||"Aluno";
+  const nivel=PERFIL&&PERFIL.nivel||null;
+  return'<div class="card"><div class="perfil-info">'+
+    '<div class="perfil-nome">'+esc(nome)+'</div>'+
+    '<div class="perfil-email">'+esc(_userEmail||"")+'</div>'+
+    (nivel?'<div class="perfil-nivel">Nível '+esc(nivel)+'</div>':"")+
+    '</div></div>'+
+    '<button class="btn ghost" data-act="sair" style="margin-top:8px;color:var(--bad)">Sair</button>'}
+
+// --- Render ---
+function render(){
+  const r=UI.rota;
+  document.querySelectorAll(".tabbar a").forEach(a=>a.removeAttribute("aria-current"));
+  const tabEl=document.getElementById("tab-"+r.split("-")[0]);
+  if(tabEl)tabEl.setAttribute("aria-current","page");
+  const main=$("#main");
+
+  if(r==="partidas"){main.innerHTML=telaPartidas();return}
+  if(r.startsWith("partida-")){
+    const pid=r.slice(8);
+    const p=PARTIDAS.find(x=>x.id===pid);
+    if(!p){UI.rota="partidas";render();return}
+    carregarPontos(pid).then(pts=>{main.innerHTML=telaDetalhePartida(p,pts)});
+    return}
+  if(r==="evolucao"){main.innerHTML=telaEvolucao();return}
+  if(r==="perfil"){main.innerHTML=telaPerfil();return}
+  UI.rota="partidas";render()}
+
+function delegate(e){
+  const el=e.target.closest("[data-act]");
+  if(!el)return;
+  const act=el.dataset.act;
+  if(act==="partida"){UI.rota="partida-"+el.dataset.id;render();window.scrollTo(0,0);return}
+  if(act==="voltar"){UI.rota="partidas";render();window.scrollTo(0,0);return}
+  if(act==="tema"){
+    const g=el.dataset.grupo,t=el.dataset.tema;
+    if(!TEMAS[g])TEMAS[g]=[];
+    const i=TEMAS[g].indexOf(t);
+    if(i>=0)TEMAS[g].splice(i,1);else TEMAS[g].push(t);
+    el.classList.toggle("ativo");
+    return}
+  if(act==="salvar-temas"){salvarTemas();return}
+  if(act==="sair"){confirmarSair();return}}
+
+function confirmarSair(){if(confirm("Sair da conta?"))sair()}
+async function sair(){await sbLogout();location.reload()}
+
+// --- Roteamento ---
+function setupRoutes(){
+  window.addEventListener("hashchange",()=>{
+    const h=(location.hash||"").replace("#","");
+    if(["partidas","evolucao","perfil"].includes(h)){UI.rota=h;render()}});
+  document.querySelectorAll(".tabbar a").forEach(a=>{
+    a.addEventListener("click",e=>{
+      e.preventDefault();
+      const h=new URL(a.href).hash.replace("#","");
+      if(h){UI.rota=h;history.pushState(null,"","#"+h);render();window.scrollTo(0,0)}})});}
+
+// --- Login ---
+function setupLogin(){
+  const f=$("#flog"),btn=document.getElementById("bcadastrar"),bes=document.getElementById("besquecer");
+  f.onsubmit=async e=>{
+    e.preventDefault();setErr("lerr","");
+    const email=f.email.value.trim(),senha=f.senha.value;
+    try{const sess=await sbLogin(email,senha);salvarSessao(sess);iniciar()}
+    catch(err){setErr("lerr",err.message)}};
+  btn.onclick=async()=>{
+    const email=f.email.value.trim(),senha=f.senha.value;
+    if(!email||!senha){setErr("lerr","Preencha e-mail e senha");return}
+    setErr("lerr","");
+    try{
+      const r=await sbSignup(email,senha);
+      if(r.session){salvarSessao(r.session);iniciar()}
+      else setErr("lerr","Conta criada! Confirme o e-mail e volte para entrar.")
+    }catch(err){setErr("lerr",err.message)}};
+  bes.onclick=async()=>{
+    const email=f.email.value.trim();
+    if(!email){setErr("lerr","Digite seu e-mail primeiro");return}
+    try{await sbResetPassword(email);setErr("lerr","E-mail de redefinição enviado!")}
+    catch(err){setErr("lerr",err.message)}}}
+
+// --- Init ---
+async function iniciar(){
+  $("#login").hidden=true;
+  $("#app").hidden=false;
+  document.getElementById("topbar-nome").textContent=_userEmail||"";
+  await Promise.all([carregarPerfil(),carregarTemas()]);
+  await Promise.all([carregarPartidas(),carregarAvaliacoes()]);
+  setupRoutes();
+  const h=(location.hash||"").replace("#","");
+  if(["partidas","evolucao","perfil"].includes(h))UI.rota=h;
+  render();
+  document.getElementById("main").addEventListener("click",delegate)}
+
+if(carregarSessao()){iniciar()}
+else{setupLogin();$("#login").hidden=false}
+</script>
+</body>
+</html>
