@@ -288,7 +288,7 @@ function exemplo(){
   return s}
 function carregar(){try{const r=localStorage.getItem(LS);if(r){const s=JSON.parse(r);if(s&&s.v===1)return Object.assign(novoEstado(),s)}}catch(e){}return null}
 let S=null;
-let UI={rota:"hoje",semana:null,mes:null,busca:"",soAtivos:true,filtroCob:"todas"};
+let UI={rota:"hoje",semana:null,mes:null,busca:"",soAtivos:true,filtroCob:"todas",scoutAluno:null,scoutPartida:null};
 function salvar(){S.updatedAt=Date.now();if(USER&&!S.demo){S.dono=USER.id;try{localStorage.setItem(LSS,USER.id)}catch(e){}}try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}nuvemEnviar()}
 
 /* ============ Supabase ============
@@ -381,9 +381,9 @@ async function iniciarNuvem(){
 /* ============ Apoio de interface ============ */
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const $=(s,r)=>(r||document).querySelector(s);
-const ICO={hoje:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>',agenda:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',alunos:'<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.900 1.900 6.500 5.500"/><path d="M16 5.500a3.500 3.500 0 0 1 0 6.500M18.500 14.800c1.700.800 2.700 2.500 3 5.200"/>',financeiro:'<path d="M12 3v18M16.500 7.500c-.700-1.400-2.200-2.200-4.300-2.200-2.600 0-4.200 1.200-4.200 3.100 0 4.400 9 2 9 6.600 0 2-1.800 3.400-4.700 3.400-2.300 0-4-.900-4.800-2.600"/>',locais:'<path d="M12 21s-6.500-5.600-6.500-11a6.500 6.500 0 0 1 13 0c0 5.400-6.500 11-6.500 11Z"/><circle cx="12" cy="10" r="2.400"/>',ajustes:'<circle cx="12" cy="12" r="3"/><path d="M12 2.500v3M12 18.500v3M2.500 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M5.300 18.700l2.100-2.100M16.600 7.400l2.100-2.100"/>'};
+const ICO={hoje:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>',agenda:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',alunos:'<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.900 1.900 6.500 5.500"/><path d="M16 5.500a3.500 3.500 0 0 1 0 6.500M18.500 14.800c1.700.800 2.700 2.500 3 5.200"/>',financeiro:'<path d="M12 3v18M16.500 7.500c-.700-1.400-2.200-2.200-4.300-2.200-2.600 0-4.200 1.200-4.200 3.100 0 4.400 9 2 9 6.600 0 2-1.800 3.400-4.700 3.400-2.300 0-4-.900-4.800-2.600"/>',locais:'<path d="M12 21s-6.500-5.600-6.500-11a6.500 6.500 0 0 1 13 0c0 5.400-6.500 11-6.500 11Z"/><circle cx="12" cy="10" r="2.400"/>',ajustes:'<circle cx="12" cy="12" r="3"/><path d="M12 2.500v3M12 18.500v3M2.500 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M5.300 18.700l2.100-2.100M16.600 7.400l2.100-2.100"/>',scout:'<circle cx="12" cy="7" r="4"/><path d="M9.5 10.5 5 20M14.5 10.5 19 20M9 20h6"/><path d="M8 7h8"/>'};
 const ico=n=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.700" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICO[n]+"</svg>";
-const ROTAS=[["hoje","Hoje"],["agenda","Agenda"],["alunos","Alunos"],["financeiro","Financeiro"],["locais","Condomínios"],["ajustes","Ajustes"]];
+const ROTAS=[["hoje","Hoje"],["agenda","Agenda"],["alunos","Alunos"],["financeiro","Financeiro"],["locais","Condomínios"],["ajustes","Ajustes"],["scout","Scout"]];
 const aluno=id=>S.alunos.find(a=>a.id===id);
 const local=id=>S.locais.find(l=>l.id===id);
 const nomeAluno=id=>(aluno(id)||{}).nome||"Aluno removido";
@@ -495,7 +495,234 @@ function telaAjustes(){
   '<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="faltaDesconta" style="width:18px;min-height:18px" '+(c.faltaDesconta!==false?"checked":"")+'> Falta sem aviso desconta do pacote</label><div class="foot" style="display:flex;justify-content:flex-end"><button class="btn primary">Salvar ajustes</button></div></form></div>'+
   '<div style="display:flex;flex-direction:column;gap:16px"><div class="card"><header><h2>Cópia de segurança</h2></header><p class="small muted" style="margin:0">Baixe um arquivo com todos os alunos, aulas e cobranças. Guarde uma cópia por mês. Para restaurar ou levar para outro aparelho, escolha o arquivo abaixo.</p><div class="actions"><button class="btn dark" data-act="backup">Baixar cópia</button><button class="btn" data-act="copiabackup">Copiar como texto</button></div><div class="field"><label for="restaurar">Restaurar de um arquivo</label><input type="file" id="restaurar" accept=".json,application/json"></div></div>'+
   cardNuvem()+"</div></div>"}
-const TELAS={hoje:telaHoje,agenda:telaAgenda,alunos:telaAlunos,financeiro:telaFinanceiro,locais:telaLocais,ajustes:telaAjustes};
+/* ============ Scout ao vivo ============ */
+/* Estado em memória durante a partida ativa */
+let _scoutPartidaCache=null; // {id,alunoId,placar,sets:[]} – atualizado ao entrar na partida
+let _scoutPontos=[]; // pontos já salvos nesta sessão (buffer local)
+
+const SB_SCOUT={
+  async listarPartidas(alunoId){
+    if(!SB||!USER)return[];
+    // coach_id = current user; aluno_id via scout_perfis.aluno_id
+    const {data,error}=await SB.from("scout_partidas")
+      .select("*")
+      .order("data",{ascending:false})
+      .limit(20);
+    if(error){console.error(error);return[]}
+    // filtra pelo aluno selecionado (campo aluno_id armazenado no coach_id=USER.id)
+    return(data||[]).filter(p=>p.aluno_id===alunoId);
+  },
+  async criarPartida(alunoId,oponente,local,data){
+    if(!SB||!USER)throw new Error("Sem sessão");
+    const id=uid();
+    const {error}=await SB.from("scout_partidas").insert({
+      id,aluno_id:alunoId,coach_id:USER.id,
+      oponente:oponente||"Oponente",local_jogo:local||"",
+      data:data||todayIso(),placar:"0-0",sets_placar:"[]",status:"em_andamento"
+    });
+    if(error)throw error;
+    return id;
+  },
+  async salvarPonto(p){
+    if(!SB||!USER)throw new Error("Sem sessão");
+    const {error}=await SB.from("scout_pontos").insert(p);
+    if(error)throw error;
+  },
+  async atualizarPlacar(partidaId,placar,setsPlacar,status){
+    if(!SB||!USER)return;
+    const {error}=await SB.from("scout_partidas").update({
+      placar,sets_placar:JSON.stringify(setsPlacar),status
+    }).eq("id",partidaId);
+    if(error)console.error(error);
+  }
+};
+
+/* helpers de placar */
+function scoutPlacarAtual(sets){
+  if(!sets||!sets.length)return{sA:0,sO:0,gA:0,gO:0};
+  const cur=sets[sets.length-1];
+  return{sA:sets.filter(s=>s.vA>s.vO).length,sO:sets.filter(s=>s.vO>s.vA).length,gA:cur.gA||0,gO:cur.gO||0};
+}
+function scoutGameFim(gA,gO){return(gA>=4||gO>=4)&&Math.abs(gA-gO)>=2}
+function scoutSetFim(vA,vO){return(vA>=6||vO>=6)&&Math.abs(vA-vO)>=2}
+function scoutGameStr(gA,gO){const pts=["0","15","30","40","ADV","W"];const a=Math.min(gA,5),o=Math.min(gO,5);if(gA>=3&&gO>=3){if(gA===gO)return"IGUAIS";if(gA>gO)return"VANT. ALUNO";return"VANT. OPO."}return pts[a]+"-"+pts[o]}
+
+function telaScout(){
+  if(!USER)return'<div class="wrap"><div class="banner"><div>Faça login para acessar o Scout ao vivo.</div></div></div>';
+  const sub=UI.scoutPartida?"ponto":UI.scoutAluno?"partidas":"alunos";
+
+  /* ---- sub-tela: lista de alunos ---- */
+  if(sub==="alunos"){
+    const lista=S.alunos.filter(a=>a.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome));
+    const rows=lista.map(a=>'<div class="row click" data-act="scout-aluno" data-id="'+a.id+'"><div class="grow"><div class="t">'+esc(a.nome)+'</div><div class="small muted">'+esc(nomeLocal(a.localId))+" · nível "+esc(a.nivel||"?")+"</div></div>"+ico("scout")+"</div>").join("");
+    return cab("Análise em tempo real","Scout","")+
+      '<style>.scout-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:56px;padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:700;font-size:14px;width:100%;text-align:center;color:var(--ink)}.scout-btn:hover{border-color:var(--gold);background:var(--gold-soft)}.scout-btn.primary{background:var(--gold);border-color:var(--gold);color:#121213}.scout-btn.primary:hover{filter:brightness(1.05)}.scout-btn.secondary{background:var(--ink);border-color:var(--ink);color:var(--bg)}.scout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.scout-grid.three{grid-template-columns:1fr 1fr 1fr}.scout-score{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center}.scout-score .sets{display:flex;gap:16px;justify-content:center;margin-bottom:12px}.scout-score .set-box{background:var(--info-bg);border-radius:8px;padding:6px 12px;font-family:var(--mono);font-weight:700}.scout-score .game-score{font-family:var(--mono);font-size:28px;font-weight:800;margin-bottom:4px}.scout-score .game-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}@media(max-width:900px){.scout-grid.three{grid-template-columns:1fr 1fr}}</style>'+
+      '<div class="card"><header><h2>Escolha o aluno para iniciar o scout</h2></header><div class="rows">'+(rows||'<div class="empty">Nenhum aluno ativo cadastrado.</div>')+"</div></div>";
+  }
+
+  /* ---- sub-tela: partidas do aluno ---- */
+  if(sub==="partidas"){
+    const a=aluno(UI.scoutAluno);
+    const nomeA=(a&&a.nome)||"Aluno";
+    // partidas carregam via script após render; placeholder com id para preencher
+    return cab("Scout · "+nomeA,"Partidas",'<button class="btn" data-act="scout-voltar">← Voltar</button><button class="btn primary" data-act="scout-nova-partida">Nova partida</button>')+
+      '<div class="card" id="scout-partidas-card"><div class="empty">Carregando partidas…</div></div>';
+  }
+
+  /* ---- sub-tela: ponto a ponto ---- */
+  const p=_scoutPartidaCache;
+  if(!p)return'<div class="wrap"><div class="empty">Carregando partida…</div></div>';
+  const a2=aluno(p.aluno_id);
+  const sets=p._sets||[];
+  const {sA,sO,gA,gO}=scoutPlacarAtual(sets);
+  const gStr=scoutGameStr(gA,gO);
+  const setBoxes=sets.map((s,i)=>'<div class="set-box"><span style="color:var(--ok)">'+s.vA+'</span> – <span style="color:var(--bad)">'+s.vO+'</span></div>').join("");
+  const sacador=p._sacadorAtual||"aluno"; // aluno | oponente
+  const faseAtual=p._fase||"saque"; // saque | resultado
+
+  let corpo="";
+  if(faseAtual==="saque"){
+    corpo='<div style="display:flex;flex-direction:column;gap:14px">'+
+      '<div class="card" style="text-align:center"><div class="small muted" style="text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Sacando</div>'+
+      '<div style="font-weight:800;font-size:18px">'+(sacador==="aluno"?esc((a2&&a2.nome)||"Aluno"):"Oponente")+'</div></div>'+
+      '<div class="scout-score"><div class="game-label">Placar do game</div><div class="game-score">'+esc(gStr)+'</div>'+
+      (setBoxes?'<div class="sets">'+setBoxes+'</div>':'')+
+      '<div class="small muted">Set '+(sets.length||1)+' · Sets: '+sA+'-'+sO+'</div></div>'+
+      '<div class="card"><header><h2>1º saque</h2></header><div class="scout-grid" style="grid-template-columns:repeat(3,1fr)">'+
+      ['dentro','ace','fora','rede','dupla_falta'].map(v=>'<button class="scout-btn'+(v==="dupla_falta"?" danger":"")+(v==="ace"?" secondary":"")+'" data-act="scout-saque" data-v="'+v+'">'+({dentro:"Entrou",ace:"Ace",fora:"Fora",rede:"Rede",dupla_falta:"Dupla Falta"}[v])+"</button>").join("")+
+      '</div></div></div>';
+  }else if(faseAtual==="saque2"){
+    corpo='<div style="display:flex;flex-direction:column;gap:14px">'+
+      '<div class="scout-score"><div class="game-label">2º Saque</div><div class="game-score">'+esc(gStr)+'</div>'+
+      (setBoxes?'<div class="sets">'+setBoxes+'</div>':'')+
+      '</div>'+
+      '<div class="card"><header><h2>2º saque</h2></header><div class="scout-grid" style="grid-template-columns:repeat(2,1fr) 1fr">'+
+      ['dentro','ace','fora','rede','dupla_falta'].map(v=>'<button class="scout-btn'+(v==="dupla_falta"?" danger":"")+(v==="ace"?" secondary":"")+'" data-act="scout-saque2" data-v="'+v+'">'+({dentro:"Entrou",ace:"Ace",fora:"Fora",rede:"Rede",dupla_falta:"Dupla Falta"}[v])+"</button>").join("")+
+      '</div></div></div>';
+  }else{ // fase rally/fim
+    corpo='<div style="display:flex;flex-direction:column;gap:14px">'+
+      '<div class="scout-score"><div class="game-label">Ponto em disputa</div><div class="game-score">'+esc(gStr)+'</div>'+
+      (setBoxes?'<div class="sets">'+setBoxes+'</div>':'')+
+      '</div>'+
+      '<div class="card"><header><h2>Quem ganhou o ponto?</h2></header><div class="scout-grid">'+
+      '<button class="scout-btn primary" data-act="scout-vencedor" data-v="aluno">'+esc((a2&&a2.nome.split(" ")[0])||"Aluno")+'</button>'+
+      '<button class="scout-btn secondary" data-act="scout-vencedor" data-v="oponente">Oponente</button>'+
+      '</div></div>'+
+      '<div class="card"><header><h2>Como terminou?</h2></header>'+
+      '<div class="scout-grid">'+
+      ['winner','erro_nf','erro_f','ace','dupla_falta'].map(v=>'<button class="scout-btn'+(v==="dupla_falta"?" danger":"")+'" data-act="scout-tipo" data-v="'+v+'">'+({winner:"Winner",erro_nf:"Erro NF",erro_f:"Erro Forçado",ace:"Ace",dupla_falta:"Dupla Falta"}[v])+"</button>").join("")+
+      '</div></div>'+
+      '<div class="card"><header><h2>Golpe final</h2></header>'+
+      '<div class="scout-grid three">'+
+      ['forehand','backhand','volei_d','volei_e','smash','saque','sem_lado'].map(v=>'<button class="scout-btn" data-act="scout-golpe" data-v="'+v+'">'+({forehand:"Forehand",backhand:"Backhand",volei_d:"Vólei D",volei_e:"Vólei E",smash:"Smash",saque:"Saque",sem_lado:"Outro"}[v])+"</button>").join("")+
+      '</div></div></div>';
+  }
+
+  return cab("Scout ao vivo · Set "+(sets.length||1)+" · "+(a2&&a2.nome||"Aluno"),
+    'Set '+(sets.length||1)+' · '+sA+'-'+sO,
+    '<button class="btn" data-act="scout-desfazer">↩ Desfazer</button>'+
+    '<button class="btn danger" data-act="scout-encerrar">Encerrar</button>')+
+    corpo+
+    '<div class="card" style="margin-top:4px"><p class="small muted" style="margin:0">Pontos salvos nesta partida: '+(_scoutPontos.length)+'</p></div>';
+}
+
+async function scoutCarregarPartidas(){
+  const card=$("#scout-partidas-card");if(!card)return;
+  if(!UI.scoutAluno){card.innerHTML='<div class="empty">Aluno não selecionado.</div>';return}
+  const lista=await SB_SCOUT.listarPartidas(UI.scoutAluno);
+  if(!lista.length){card.innerHTML='<div class="empty">Nenhuma partida ainda. Clique em Nova partida para começar.</div>';return}
+  const rows=lista.map(p=>{
+    const data=p.data?fmtD(p.data)+"/"+(p.data||"").slice(0,4):"";
+    const st=p.status==="em_andamento"?pill("gold","Em andamento"):pill("","Finalizada");
+    return'<div class="row"><div class="grow click" data-act="scout-entrar" data-id="'+esc(p.id)+'"><div class="t">'+esc(p.oponente||"Oponente")+'</div><div class="small muted">'+esc(data)+(p.local_jogo?" · "+esc(p.local_jogo):"")+" · "+esc(p.placar||"0-0")+"</div></div>"+st+'</div>';
+  }).join("");
+  card.innerHTML='<div class="rows">'+rows+"</div>";
+}
+
+async function scoutEntrarPartida(partidaId){
+  if(!SB||!USER)return;
+  const {data,error}=await SB.from("scout_partidas").select("*").eq("id",partidaId).single();
+  if(error||!data){toast("Partida não encontrada");return}
+  let sets=[];try{sets=JSON.parse(data.sets_placar||"[]")}catch(e){}
+  if(!sets.length)sets=[{vA:0,vO:0,gA:0,gO:0}];
+  _scoutPartidaCache={...data,_sets:sets,_fase:"saque",_sacadorAtual:"aluno",_pontoAtual:{set_num:sets.length,game_num:1,ponto_num:1}};
+  // carrega pontos existentes para contar
+  const {data:pts}=await SB.from("scout_pontos").select("id").eq("partida_id",partidaId);
+  _scoutPontos=(pts||[]).map(x=>x.id);
+  UI.scoutPartida=partidaId;
+  render();
+}
+
+function scoutProcessarSaque(v,segundo){
+  const p=_scoutPartidaCache;if(!p)return;
+  if(v==="ace"){
+    // ponto direto
+    p[segundo?"_saque2":"_saque1"]=v;
+    p._tipo_fim="ace";p._golpe_fim="saque";p._vencedor=p._sacadorAtual;
+    _scoutFinalizarPonto();return;
+  }
+  if(v==="dupla_falta"){
+    p._saque1=segundo?"fora":"fora"; p._saque2="dupla_falta";
+    p._tipo_fim="dupla_falta";p._golpe_fim="saque";p._vencedor=p._sacadorAtual==="aluno"?"oponente":"aluno";
+    _scoutFinalizarPonto();return;
+  }
+  if(segundo){p._saque2=v;p._fase="rally"}
+  else if(v==="fora"||v==="rede"){p._saque1=v;p._fase="saque2"}
+  else{p._saque1=v;p._fase="rally"}
+  render();
+}
+
+function scoutProcessarRally(campo,valor){
+  const p=_scoutPartidaCache;if(!p)return;
+  if(campo==="vencedor"){p._vencedor=valor}
+  else if(campo==="tipo"){p._tipo_fim=valor}
+  else if(campo==="golpe"){p._golpe_fim=valor}
+  // se tivermos vencedor + tipo ou golpe, salvar automaticamente quando golpe definido
+  if(campo==="golpe"){_scoutFinalizarPonto();return}
+  render();
+}
+
+async function _scoutFinalizarPonto(){
+  const p=_scoutPartidaCache;if(!p)return;
+  const sets=p._sets;const curSet=sets[sets.length-1];
+  const vencedor=p._vencedor||"aluno";
+  if(vencedor==="aluno")curSet.gA=(curSet.gA||0)+1;
+  else curSet.gO=(curSet.gO||0)+1;
+
+  // montar objeto ponto
+  const po={id:uid(),partida_id:p.id,coach_id:USER.id,
+    set_num:sets.length,game_num:p._pontoAtual&&p._pontoAtual.game_num||1,ponto_num:(_scoutPontos.length+1),
+    sacador:p._sacadorAtual||"aluno",
+    saque1:p._saque1||null,saque2:p._saque2||null,saque_forcou:false,
+    vencedor,tipo_fim:p._tipo_fim||null,
+    golpe_fim:p._golpe_fim||null,destino_fim:null,zona_fim:null,num_bolas:1
+  };
+  _scoutPontos.push(po.id);
+  SB_SCOUT.salvarPonto(po).catch(e=>console.error("Erro ao salvar ponto",e));
+
+  // verificar game
+  const gA=curSet.gA,gO=curSet.gO;
+  if(scoutGameFim(gA,gO)){
+    if(vencedor==="aluno")curSet.vA=(curSet.vA||0)+1;else curSet.vO=(curSet.vO||0)+1;
+    curSet.gA=0;curSet.gO=0;
+    // trocar saque a cada game
+    p._sacadorAtual=p._sacadorAtual==="aluno"?"oponente":"aluno";
+    // verificar set
+    if(scoutSetFim(curSet.vA,curSet.vO)){
+      sets.push({vA:0,vO:0,gA:0,gO:0});
+      const sA=sets.filter(s=>s.vA>s.vO).length,sO=sets.filter(s=>s.vO>s.vA).length;
+      const placar=sA+"-"+sO,status=(sA>=2||sO>=2)?"finalizada":"em_andamento";
+      SB_SCOUT.atualizarPlacar(p.id,placar,sets,status).catch(console.error);
+      if(status==="finalizada"){toast("Partida encerrada! "+placar);UI.scoutPartida=null;_scoutPartidaCache=null;render();return}
+    }
+  }
+  // reiniciar fase
+  p._fase="saque";p._saque1=null;p._saque2=null;p._vencedor=null;p._tipo_fim=null;p._golpe_fim=null;
+  SB_SCOUT.atualizarPlacar(p.id,sets.filter(s=>s.vA>s.vO).length+"-"+sets.filter(s=>s.vO>s.vA).length,sets,"em_andamento").catch(console.error);
+  render();
+}
+
+const TELAS={hoje:telaHoje,agenda:telaAgenda,alunos:telaAlunos,financeiro:telaFinanceiro,locais:telaLocais,ajustes:telaAjustes,scout:telaScout};
 function render(){
   const r=TELAS[UI.rota]?UI.rota:"hoje";
   $("#view").innerHTML=TELAS[r]();
@@ -503,6 +730,7 @@ function render(){
   $("#nav").innerHTML=ROTAS.map(x=>link(x)).join("");
   $("#tabbar").innerHTML=ROTAS.slice(0,5).map(x=>link(x,true)).join("");
   $("#gear").innerHTML=ico("ajustes");
+  if(UI.rota==="scout"&&UI.scoutAluno&&!UI.scoutPartida)setTimeout(scoutCarregarPartidas,0);
   const b=$("#busca");if(b)b.oninput=()=>{UI.busca=b.value;const pos=b.selectionStart;render();const n=$("#busca");n.focus();n.setSelectionRange(pos,pos)};
   const fc=$("#fcfg");if(fc)fc.onsubmit=e=>{e.preventDefault();const d=dados(fc);Object.assign(S.config,{nome:d.nome.trim()||"Carmona",whatsapp:d.whatsapp.trim(),pixTipo:d.pixTipo,pix:d.pix.trim(),pixNome:d.pixNome.trim(),cidade:d.cidade.trim(),msgCobranca:d.msgCobranca||MSG_COBRANCA,faltaDesconta:!!d.faltaDesconta});salvar();toast("Ajustes salvos")};
   const fsb=$("#fsb");if(fsb)fsb.onsubmit=e=>{e.preventDefault();const d=dados(fsb),u=d.url.trim().replace(/\/+$/,"");if(!/^https:\/\//.test(u)){toast("A URL precisa começar com https://");return}try{localStorage.setItem(LSC,JSON.stringify({url:u,key:d.key.trim()}))}catch(e){}location.reload()};
@@ -637,7 +865,42 @@ const ACT={
   copiabackup:()=>copiar(JSON.stringify(S)),
   csv:async d=>{const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';const l=[["Aluno","Condominio","Descricao","Tipo","Vencimento","Valor","Situacao","Pago em","Forma"].join(";")];
     S.cobrancas.filter(c=>monthKey(c.venc)===d.mk||(c.pagoEm&&monthKey(c.pagoEm)===d.mk)).forEach(c=>{const a=aluno(c.alunoId)||{};l.push([q(a.nome),q(nomeLocal(a.localId)),q(c.desc),q(c.tipo),c.venc,String(Number(c.valor).toFixed(2)).replace(".",","),COB[statusCobranca(c)][1],c.pagoEm||"",q(c.forma)].join(";"))});
-    const ok=await baixar("financeiro-"+d.mk+".csv","﻿"+l.join("\n"),"text/csv");toast(ok?"Planilha gerada":"Não foi possível baixar aqui")}
+    const ok=await baixar("financeiro-"+d.mk+".csv","﻿"+l.join("\n"),"text/csv");toast(ok?"Planilha gerada":"Não foi possível baixar aqui")},
+  /* ---- scout handlers ---- */
+  "scout-aluno":d=>{UI.scoutAluno=d.id;UI.scoutPartida=null;_scoutPartidaCache=null;_scoutPontos=[];render()},
+  "scout-voltar":()=>{if(UI.scoutPartida){UI.scoutPartida=null;_scoutPartidaCache=null;render()}else{UI.scoutAluno=null;render()}},
+  "scout-nova-partida":()=>{
+    if(!UI.scoutAluno){toast("Nenhum aluno selecionado");return}
+    const a=aluno(UI.scoutAluno);
+    abrir("Nova partida",'<form id="fnp">'+
+      campo("oponente","Nome do oponente",inp("oponente","","placeholder=\"Oponente\" required"))+
+      '<div class="frow">'+
+      campo("data","Data",inp("data",todayIso(),'type="date" required'))+
+      campo("local_jogo","Local",inp("local_jogo","","placeholder=\"Quadra, clube…\""))+
+      '</div><div class="foot"><button type="button" class="btn" data-act="fechar">Cancelar</button><button class="btn primary">Iniciar partida</button></div></form>');
+    const f=$("#fnp");f.onsubmit=async e=>{e.preventDefault();const d=dados(f);fechar();
+      try{const pid=await SB_SCOUT.criarPartida(UI.scoutAluno,d.oponente,d.local_jogo,d.data);scoutEntrarPartida(pid)}
+      catch(err){toast("Erro ao criar partida: "+(err.message||err))}
+    }
+  },
+  "scout-entrar":d=>scoutEntrarPartida(d.id),
+  "scout-saque":d=>scoutProcessarSaque(d.v,false),
+  "scout-saque2":d=>scoutProcessarSaque(d.v,true),
+  "scout-vencedor":d=>scoutProcessarRally("vencedor",d.v),
+  "scout-tipo":d=>scoutProcessarRally("tipo",d.v),
+  "scout-golpe":d=>scoutProcessarRally("golpe",d.v),
+  "scout-desfazer":()=>{
+    const p=_scoutPartidaCache;if(!p)return;
+    p._fase="saque";p._saque1=null;p._saque2=null;p._vencedor=null;p._tipo_fim=null;p._golpe_fim=null;
+    render();toast("Ponto desfeito — registre novamente")
+  },
+  "scout-encerrar":()=>confirmar("Encerrar esta partida agora?","Encerrar",async()=>{
+    const p=_scoutPartidaCache;if(!p)return;
+    const sets=p._sets||[];
+    const sA=sets.filter(s=>s.vA>s.vO).length,sO=sets.filter(s=>s.vO>s.vA).length;
+    await SB_SCOUT.atualizarPlacar(p.id,sA+"-"+sO,sets,"finalizada").catch(console.error);
+    _scoutPartidaCache=null;UI.scoutPartida=null;render();toast("Partida encerrada — "+sA+"-"+sO)
+  })
 };
 if(typeof document!=="undefined"){
   document.addEventListener("click",ev=>{const el=ev.target.closest("[data-act]");if(!el)return;const f=ACT[el.dataset.act];if(f)f(el.dataset,el,ev)});
