@@ -22,6 +22,10 @@ create table if not exists public.scout_partidas (
   formato       text not null default '1 set, sem vantagem',
   placar        text not null default '',
   obs           text,
+  -- reflexão pós-jogo preenchida pelo aluno
+  reflexao_funcionou   text,
+  reflexao_nao_funcionou text,
+  reflexao_sentiu_falta  text,
   criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now()
 );
@@ -116,14 +120,36 @@ create policy scout_evolucao_dono on public.scout_evolucao for all to authentica
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 
+-- Partidas: o aluno pode inserir suas próprias partidas (coach_id = aluno uid)
+drop policy if exists scout_partida_aluno_insert on public.scout_partidas;
+create policy scout_partida_aluno_insert on public.scout_partidas for insert to authenticated
+  with check (
+    coach_id = (select auth.uid()) and
+    aluno_id in (
+      select aluno_id from public.scout_perfis
+      where user_id = (select auth.uid()) and aluno_id is not null
+    )
+  );
+
 -- Partidas: o aluno lê as partidas onde aparece como aluno_id via perfil
--- (o coach vincula o aluno_id ao user_id do aluno no scout_perfis)
 drop policy if exists scout_partida_aluno_leitura on public.scout_partidas;
 create policy scout_partida_aluno_leitura on public.scout_partidas for select to authenticated
   using (
     aluno_id in (
       select aluno_id from public.scout_perfis
       where user_id = (select auth.uid()) and aluno_id is not null
+    )
+  );
+
+-- Carmona pode ler todas as partidas dos seus alunos (via scout_perfis)
+drop policy if exists scout_partida_coach_leitura on public.scout_partidas;
+create policy scout_partida_coach_leitura on public.scout_partidas for select to authenticated
+  using (
+    exists (
+      select 1 from public.scout_perfis sp
+      join auth.users u on u.email = 'carmonabrasiloficial@gmail.com'
+      where sp.aluno_id = scout_partidas.aluno_id
+      and (select auth.uid()) = u.id
     )
   );
 

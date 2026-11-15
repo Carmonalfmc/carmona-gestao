@@ -125,6 +125,16 @@ h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
 .aval-data{font-size:12px;color:var(--muted);margin-bottom:6px}
 .aval-texto{font-size:14px;line-height:1.6}
 
+/* Formulário nova partida */
+.form-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-field label{font-size:13px;color:var(--muted)}
+.form-field input,.form-field select,.form-field textarea{padding:11px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;width:100%}
+.form-field textarea{min-height:80px;resize:vertical;line-height:1.5}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:2px solid var(--gold);outline-offset:1px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.reflexao-block{background:var(--gold-soft);border:1px solid #3D3015;border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
+.reflexao-block .reflexao-titulo{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--gold-ink);font-weight:700;margin-bottom:12px}
+
 /* Perfil */
 .perfil-info{padding:16px;display:flex;flex-direction:column;gap:6px}
 .perfil-nome{font-size:20px;font-weight:800;font-family:var(--display)}
@@ -277,6 +287,66 @@ async function salvarTemas(){
     toast("Temas salvos")}
   catch(e){toast("Erro ao salvar: "+e.message)}}
 
+// --- Nova partida ---
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+function telaNovaPartida(){
+  const hoje=new Date().toISOString().slice(0,10);
+  return'<button class="back-btn" data-act="voltar">'+ico('<polyline points="15 18 9 12 15 6"/>')+'Partidas</button>'+
+    '<h1>Nova partida</h1>'+
+    '<form id="fpartida" style="margin-top:16px">'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label>Data</label><input type="date" name="data" value="'+hoje+'" required></div>'+
+      '<div class="form-field"><label>Adversário</label><input type="text" name="oponente" placeholder="Nome do adversário" required></div>'+
+    '</div>'+
+    '<div class="form-row">'+
+      '<div class="form-field"><label>Placar (ex: 6-4)</label><input type="text" name="placar" placeholder="6-4" pattern="\\d+[\\-x·]\\d+(\\s\\d+[\\-x·]\\d+)*"></div>'+
+      '<div class="form-field"><label>Formato</label>'+
+        '<select name="formato">'+
+          '<option value="1 set, sem vantagem">1 set, sem vantagem</option>'+
+          '<option value="1 set, com vantagem">1 set, com vantagem</option>'+
+          '<option value="Melhor de 3 sets">Melhor de 3 sets</option>'+
+          '<option value="Melhor de 5 sets">Melhor de 5 sets</option>'+
+          '<option value="Super tie-break">Super tie-break</option>'+
+        '</select>'+
+      '</div>'+
+    '</div>'+
+    '<div class="reflexao-block">'+
+      '<div class="reflexao-titulo">Reflexão pós-jogo</div>'+
+      '<div class="form-field"><label>O que funcionou</label><textarea name="funcionou" placeholder="O que você fez bem hoje..."></textarea></div>'+
+      '<div class="form-field"><label>O que não funcionou</label><textarea name="nao_funcionou" placeholder="O que você queria fazer diferente..."></textarea></div>'+
+      '<div class="form-field" style="margin-bottom:0"><label>O que sentiu falta</label><textarea name="sentiu_falta" placeholder="Algo que você não conseguiu executar ou que precisava ter no jogo..."></textarea></div>'+
+    '</div>'+
+    '<div id="fpartida-err" style="color:var(--bad);font-size:13px;min-height:18px;margin-bottom:8px"></div>'+
+    '<button type="submit" class="btn primary">Salvar partida</button>'+
+    '</form>'}
+
+async function salvarNovaPartida(form){
+  if(!PERFIL||!PERFIL.aluno_id){toast("Conta ainda não vinculada pelo professor.");return}
+  const data={
+    id: uid(),
+    coach_id: null, // sem coach_id — criada pelo aluno; RLS precisa de policy separada
+    aluno_id: PERFIL.aluno_id,
+    oponente: form.oponente.value.trim(),
+    data: form.data.value,
+    formato: form.formato.value,
+    placar: form.placar.value.trim(),
+    reflexao_funcionou: form.funcionou.value.trim()||null,
+    reflexao_nao_funcionou: form.nao_funcionou.value.trim()||null,
+    reflexao_sentiu_falta: form.sentiu_falta.value.trim()||null,
+  };
+  // Para partidas criadas pelo aluno, usamos user_id do aluno como coach_id provisório
+  // O coach vai poder ver e fazer scout depois
+  data.coach_id = _uid; // aluno cria com o próprio uid; coach pode fazer scout depois
+  try{
+    await sbPost("scout_partidas",data);
+    PARTIDAS=[data,...PARTIDAS];
+    UI.rota="partidas";render();
+    toast("Partida salva!");
+  }catch(e){
+    const err=document.getElementById("fpartida-err");
+    if(err)err.textContent="Erro ao salvar: "+e.message}}
+
 // --- Telas ---
 const TEMAS_OPCOES=[
   {grupo:"Minha direita (forehand)",temas:["Bola alta","Bola de ataque","Bola baixa","Bola de defesa","Cortada (slice)","Com efeito (topspin)"]},
@@ -286,11 +356,12 @@ const TEMAS_OPCOES=[
 ];
 
 function telaPartidas(){
+  const header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><h1>Partidas</h1><button class="btn sm primary" data-act="nova-partida">+ Nova</button></div>';
   if(!PERFIL||!PERFIL.aluno_id){
-    return'<div class="empty">'+ico('<circle cx="12" cy="8" r="4"/><path d="M4 20c.8-4 3.8-6 8-6s7.2 2 8 6"/>')+'<div>Aguardando o professor vincular sua conta.<br>Volte em breve.</div></div>'}
+    return header+'<div class="empty">'+ico('<circle cx="12" cy="8" r="4"/><path d="M4 20c.8-4 3.8-6 8-6s7.2 2 8 6"/>')+'<div>Aguardando o professor vincular sua conta.<br>Volte em breve.</div></div>'}
   if(!PARTIDAS.length){
-    return'<div class="empty">'+ico('<circle cx="12" cy="12" r="9"/><path d="M12 3c2.4 2.4 3.9 5.6 4 9"/>')+'<div>Nenhuma partida ainda.<br>O professor vai registrar aqui.</div></div>'}
-  return PARTIDAS.map(p=>{
+    return header+'<div class="empty">'+ico('<circle cx="12" cy="12" r="9"/><path d="M12 3c2.4 2.4 3.9 5.6 4 9"/>')+'<div>Nenhuma partida ainda.<br>Adicione a primeira com o botão acima.</div></div>'}
+  return header+'<div class="card">'+PARTIDAS.map(p=>{
     const scores=p.placar?p.placar.split(/[-x·]/).map(s=>+s.trim()):[0,0];
     const alunoVenceu=scores[0]>scores[1];
     return'<div class="match-item" data-act="partida" data-id="'+esc(p.id)+'">'+
@@ -298,7 +369,7 @@ function telaPartidas(){
       '<div><div class="oponente">'+esc(p.oponente||"Adversário")+'</div><div class="meta">'+esc(fmt(p.data))+(p.formato?' · '+esc(p.formato):"")+'</div></div>'+
       '<div class="placar" style="color:'+(alunoVenceu?'var(--ok)':'var(--bad)')+'">'+esc(p.placar)+'</div>'+
       '</div></div>'
-  }).join("")}
+  }).join("")+'</div>'}
 
 function telaDetalhePartida(p,pts){
   // Calcula estatísticas
@@ -423,7 +494,14 @@ function telaDetalhePartida(p,pts){
       '<div class="zona-val loss">'+zonaPerdeu(z)+'</div>'+
       '</div>').join("")+
     '</div></div>'+
-    (p.obs?'<div class="card"><div style="padding:14px 16px 6px"><h2>Observações do professor</h2></div><div class="resumo-block">'+esc(p.obs)+'</div></div>':"")}
+    (p.obs?'<div class="card"><div style="padding:14px 16px 6px"><h2>Observações do professor</h2></div><div class="resumo-block">'+esc(p.obs)+'</div></div>':"")+
+    ((p.reflexao_funcionou||p.reflexao_nao_funcionou||p.reflexao_sentiu_falta)?
+      '<div class="card"><div style="padding:14px 16px 6px"><h2>Reflexão pós-jogo</h2></div>'+
+      '<div class="resumo-block" style="display:flex;flex-direction:column;gap:14px">'+
+      (p.reflexao_funcionou?'<div><div style="font-size:12px;color:var(--ok);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-bottom:4px">O que funcionou</div><div>'+esc(p.reflexao_funcionou)+'</div></div>':"") +
+      (p.reflexao_nao_funcionou?'<div><div style="font-size:12px;color:var(--bad);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-bottom:4px">O que não funcionou</div><div>'+esc(p.reflexao_nao_funcionou)+'</div></div>':"") +
+      (p.reflexao_sentiu_falta?'<div><div style="font-size:12px;color:var(--warn);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-bottom:4px">O que sentiu falta</div><div>'+esc(p.reflexao_sentiu_falta)+'</div></div>':"") +
+      '</div></div>':"")}
 
 function telaEvolucao(){
   return'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><h1>Quer evoluir em</h1></div>'+
@@ -465,6 +543,11 @@ function render(){
   const main=$("#main");
 
   if(r==="partidas"){main.innerHTML=telaPartidas();return}
+  if(r==="nova-partida"){
+    main.innerHTML=telaNovaPartida();
+    const fp=document.getElementById("fpartida");
+    if(fp)fp.onsubmit=e=>{e.preventDefault();salvarNovaPartida(fp)};
+    return}
   if(r.startsWith("partida-")){
     const pid=r.slice(8);
     const p=PARTIDAS.find(x=>x.id===pid);
@@ -479,6 +562,7 @@ function delegate(e){
   const el=e.target.closest("[data-act]");
   if(!el)return;
   const act=el.dataset.act;
+  if(act==="nova-partida"){UI.rota="nova-partida";render();window.scrollTo(0,0);return}
   if(act==="partida"){UI.rota="partida-"+el.dataset.id;render();window.scrollTo(0,0);return}
   if(act==="voltar"){UI.rota="partidas";render();window.scrollTo(0,0);return}
   if(act==="tema"){
